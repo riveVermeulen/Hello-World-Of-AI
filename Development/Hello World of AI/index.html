@@ -129,6 +129,130 @@
             padding: 0.2rem 0.6rem;
             border-radius: 999px;
         }
+
+        /* Dribbble section */
+        .dribbble-section {
+            padding: 3rem 1.5rem;
+            border-top: 1px solid #1a1a1a;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            max-width: 1200px;
+            margin: 0 auto 2rem;
+            opacity: 0;
+            animation: dissolveIn 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+        }
+
+        .section-title .muted { color: #666; }
+        .section-title .bright { color: #fafafa; }
+
+        .carousel {
+            position: relative;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .carousel-track {
+            display: flex;
+            gap: 1.25rem;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding: 0.5rem 1.25rem 0.5rem 0;
+        }
+
+        .carousel-track::-webkit-scrollbar {
+            display: none;
+        }
+
+        .shot-card {
+            flex: 0 0 320px;
+            scroll-snap-align: start;
+            border: 1px solid #1a1a1a;
+            border-radius: 12px;
+            overflow: hidden;
+            text-decoration: none;
+            color: inherit;
+            opacity: 0;
+            animation: dissolveIn 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+
+        .shot-card:last-child {
+            scroll-snap-align: end;
+        }
+
+        .shot-card:hover {
+            border-color: #333;
+            transform: translateY(-4px);
+        }
+
+        .shot-card img {
+            width: 100%;
+            height: 240px;
+            object-fit: cover;
+            display: block;
+            background-color: #1a1a1a;
+        }
+
+        .shot-card-body {
+            padding: 1rem 1.25rem;
+        }
+
+        .shot-card-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .carousel-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid #1a1a1a;
+            background: #0a0a0a;
+            color: #fafafa;
+            font-size: 1.25rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: border-color 0.2s, opacity 0.2s;
+            z-index: 2;
+        }
+
+        .carousel-btn:hover {
+            border-color: #333;
+        }
+
+        .carousel-btn.prev { left: -20px; }
+        .carousel-btn.next { right: -20px; }
+
+        .carousel-btn:disabled {
+            opacity: 0.2;
+            cursor: default;
+        }
+
+        #dribbble-loading {
+            text-align: center;
+            color: #666;
+            font-size: 1rem;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        #dribbble-error {
+            text-align: center;
+            color: #d4d4d4;
+            font-size: 1rem;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -139,6 +263,16 @@
         <div id="loading">Loading...</div>
         <div id="error"></div>
         <div class="grid" id="grid"></div>
+    </div>
+    <div class="dribbble-section">
+        <div class="section-title"><span class="muted">Dribbble</span> <span class="bright">@Hello Rive</span></div>
+        <div id="dribbble-loading">Loading...</div>
+        <div id="dribbble-error"></div>
+        <div class="carousel" id="carousel" style="display:none">
+            <button class="carousel-btn prev" id="prevBtn" disabled>&lsaquo;</button>
+            <div class="carousel-track" id="carousel-track"></div>
+            <button class="carousel-btn next" id="nextBtn">&rsaquo;</button>
+        </div>
     </div>
 
     <script>
@@ -203,6 +337,85 @@
         }
 
         loadArticles();
+
+        // Dribbble carousel
+        const DRIBBBLE_URL = 'https://api.codetabs.com/v1/proxy?quest=https://dribbble.com/hellorive';
+
+        async function loadDribbbleShots() {
+            const loading = document.getElementById('dribbble-loading');
+            const error = document.getElementById('dribbble-error');
+            const carousel = document.getElementById('carousel');
+            const track = document.getElementById('carousel-track');
+
+            try {
+                const res = await fetch(DRIBBBLE_URL);
+                if (!res.ok) throw new Error('Failed to fetch');
+                const html = await res.text();
+
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const shots = doc.querySelectorAll('li.shot-thumbnail');
+
+                if (!shots.length) throw new Error('No shots found');
+
+                loading.style.display = 'none';
+                carousel.style.display = 'block';
+
+                shots.forEach(function(shot, i) {
+                    const titleEl = shot.querySelector('.shot-title');
+                    const imgEl = shot.querySelector('img');
+                    const linkEl = shot.querySelector('a.shot-thumbnail-link');
+
+                    if (!titleEl || !imgEl) return;
+
+                    var imgSrc = imgEl.getAttribute('data-src') || imgEl.getAttribute('src');
+
+                    var href = linkEl ? linkEl.getAttribute('href') : '#';
+                    if (href.startsWith('/')) href = 'https://dribbble.com' + href;
+
+                    var card = document.createElement('a');
+                    card.className = 'shot-card';
+                    card.href = href;
+                    card.target = '_blank';
+                    card.rel = 'noopener';
+                    card.style.animationDelay = (i * 0.12) + 's';
+
+                    card.innerHTML =
+                        '<img src="' + imgSrc + '" alt="' + titleEl.textContent.trim() + '">' +
+                        '<div class="shot-card-body">' +
+                            '<div class="shot-card-title">' + titleEl.textContent.trim() + '</div>' +
+                        '</div>';
+
+                    track.appendChild(card);
+                });
+
+                // Carousel navigation
+                var prevBtn = document.getElementById('prevBtn');
+                var nextBtn = document.getElementById('nextBtn');
+                var scrollAmount = 340;
+
+                function updateButtons() {
+                    prevBtn.disabled = track.scrollLeft <= 0;
+                    nextBtn.disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 1;
+                }
+
+                prevBtn.addEventListener('click', function() {
+                    track.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+                });
+                nextBtn.addEventListener('click', function() {
+                    track.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+                });
+                track.addEventListener('scroll', updateButtons);
+                updateButtons();
+
+            } catch (e) {
+                loading.style.display = 'none';
+                error.style.display = 'block';
+                error.textContent = 'Could not load Dribbble shots.';
+            }
+        }
+
+        loadDribbbleShots();
     </script>
 </body>
 </html>
