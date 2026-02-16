@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Article — Hello, Rive!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            background-color: #0a0a0a;
+            color: #fafafa;
+            padding: 3rem 1.5rem;
+        }
+
+        @keyframes dissolveIn {
+            from {
+                opacity: 0;
+                filter: blur(12px);
+            }
+            to {
+                opacity: 1;
+                filter: blur(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        .back {
+            display: inline-block;
+            color: #d4d4d4;
+            text-decoration: none;
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: dissolveIn 0.6s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+        }
+
+        .back:hover {
+            color: #fafafa;
+        }
+
+        #loading {
+            text-align: center;
+            color: #666;
+            font-size: 1rem;
+            animation: pulse 1.5s ease-in-out infinite;
+            margin-top: 4rem;
+        }
+
+        #error {
+            text-align: center;
+            color: #d4d4d4;
+            font-size: 1rem;
+            display: none;
+            margin-top: 4rem;
+        }
+
+        .article-title {
+            font-size: 2.25rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.3;
+            margin-bottom: 1rem;
+            opacity: 0;
+            animation: dissolveIn 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s forwards;
+        }
+
+        .article-meta {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 2.5rem;
+            opacity: 0;
+            animation: dissolveIn 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) 0.22s forwards;
+        }
+
+        .article-meta a {
+            color: #d4d4d4;
+            text-decoration: none;
+        }
+
+        .article-meta a:hover {
+            color: #fafafa;
+        }
+
+        .article-content {
+            opacity: 0;
+            animation: dissolveIn 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) 0.34s forwards;
+            line-height: 1.8;
+            color: #d4d4d4;
+        }
+
+        .article-content h1,
+        .article-content h2,
+        .article-content h3,
+        .article-content h4 {
+            color: #fafafa;
+            margin: 2rem 0 1rem;
+            line-height: 1.3;
+        }
+
+        .article-content h1 { font-size: 1.75rem; }
+        .article-content h2 { font-size: 1.5rem; }
+        .article-content h3 { font-size: 1.25rem; }
+        .article-content h4 { font-size: 1.1rem; }
+
+        .article-content p {
+            margin-bottom: 1.25rem;
+        }
+
+        .article-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            display: block;
+        }
+
+        .article-content figure {
+            margin: 1.5rem 0;
+        }
+
+        .article-content figure img {
+            margin: 0 0 0.5rem;
+        }
+
+        .article-content figcaption {
+            font-size: 0.85rem;
+            color: #666;
+            text-align: center;
+        }
+
+        .article-content blockquote {
+            border-left: 3px solid #333;
+            padding-left: 1.25rem;
+            margin: 1.5rem 0;
+            color: #d4d4d4;
+            font-style: italic;
+        }
+
+        .article-content a {
+            color: #fafafa;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        .article-content a:hover {
+            color: #d4d4d4;
+        }
+
+        .article-content ul,
+        .article-content ol {
+            margin: 1rem 0 1.25rem 1.5rem;
+        }
+
+        .article-content li {
+            margin-bottom: 0.5rem;
+        }
+
+        .article-content pre {
+            background: #1a1a1a;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+        }
+
+        .article-content code {
+            background: #1a1a1a;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .article-content pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .article-footer {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid #1a1a1a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            opacity: 0;
+            animation: dissolveIn 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) 0.46s forwards;
+        }
+
+        .article-footer a {
+            color: #d4d4d4;
+            text-decoration: none;
+            font-size: 0.95rem;
+        }
+
+        .article-footer a:hover {
+            color: #fafafa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a class="back" href="index.html">&larr; Back</a>
+        <div id="loading">Loading...</div>
+        <div id="error"></div>
+        <div id="article" style="display:none"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://api.rss2json.com/v1/api.json?rss_url=https://medium.com/feed/@hellorive';
+
+        function getGuid() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('guid');
+        }
+
+        function formatDate(dateStr) {
+            return new Date(dateStr).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        function cleanContent(html) {
+            const div = document.createElement('div');
+            div.innerHTML = html;
+            // Remove Medium tracking pixels (1x1 images)
+            div.querySelectorAll('img').forEach(function(img) {
+                const src = img.getAttribute('src') || '';
+                const w = img.getAttribute('width');
+                const h = img.getAttribute('height');
+                if ((w === '1' && h === '1') || src.includes('stat?event')) {
+                    img.remove();
+                }
+            });
+            return div.innerHTML;
+        }
+
+        async function loadArticle() {
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const articleEl = document.getElementById('article');
+            const guid = getGuid();
+
+            if (!guid) {
+                loading.style.display = 'none';
+                error.style.display = 'block';
+                error.textContent = 'No article specified.';
+                return;
+            }
+
+            try {
+                const res = await fetch(API_URL);
+                if (!res.ok) throw new Error('Failed to fetch');
+                const data = await res.json();
+
+                const item = data.items.find(function(i) { return i.guid === guid; });
+                if (!item) throw new Error('Article not found');
+
+                document.title = item.title + ' — Hello, Rive!';
+                loading.style.display = 'none';
+                articleEl.style.display = 'block';
+
+                const categories = item.categories || [];
+                const content = cleanContent(item.content || item.description || '');
+
+                articleEl.innerHTML =
+                    '<h1 class="article-title">' + item.title + '</h1>' +
+                    '<div class="article-meta">' +
+                        formatDate(item.pubDate) +
+                        (item.author ? ' &middot; ' + item.author : '') +
+                        (categories.length ? ' &middot; ' + categories.join(', ') : '') +
+                        ' &middot; <a href="' + item.link + '" target="_blank" rel="noopener">Read on Medium</a>' +
+                    '</div>' +
+                    '<div class="article-content">' + content + '</div>' +
+                    '<div class="article-footer">' +
+                        '<a href="index.html">&larr; Back</a>' +
+                        '<a href="' + item.link + '" target="_blank" rel="noopener">Read on Medium &rarr;</a>' +
+                    '</div>';
+            } catch (e) {
+                loading.style.display = 'none';
+                error.style.display = 'block';
+                error.textContent = e.message === 'Article not found'
+                    ? 'Article not found.'
+                    : 'Could not load article. Please try again later.';
+            }
+        }
+
+        loadArticle();
+    </script>
+</body>
+</html>

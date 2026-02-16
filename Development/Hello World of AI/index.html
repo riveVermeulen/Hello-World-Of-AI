@@ -13,10 +13,6 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
             background-color: #0a0a0a;
             color: #fafafa;
         }
@@ -32,15 +28,181 @@
             }
         }
 
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+        }
+
+        .hero {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
         h1 {
             font-size: 4rem;
             font-weight: 700;
             letter-spacing: -0.02em;
+            text-align: center;
             animation: dissolveIn 1.8s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+        }
+
+        .articles-section {
+            padding: 3rem 1.5rem;
+        }
+
+        #loading {
+            text-align: center;
+            color: #666;
+            font-size: 1rem;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        #error {
+            text-align: center;
+            color: #d4d4d4;
+            font-size: 1rem;
+            display: none;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .tile {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            border: 1px solid #1a1a1a;
+            border-radius: 12px;
+            overflow: hidden;
+            opacity: 0;
+            animation: dissolveIn 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+
+        .tile:hover {
+            border-color: #333;
+            transform: translateY(-4px);
+        }
+
+        .tile-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            display: block;
+            background-color: #1a1a1a;
+        }
+
+        .tile-body {
+            padding: 1.25rem;
+        }
+
+        .tile-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            line-height: 1.4;
+            margin-bottom: 0.5rem;
+        }
+
+        .tile-date {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 0.75rem;
+        }
+
+        .tile-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .tag {
+            font-size: 0.75rem;
+            color: #d4d4d4;
+            background: #1a1a1a;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
         }
     </style>
 </head>
 <body>
-    <h1>Hello, Rive!</h1>
+    <div class="hero">
+        <h1>Hello, Rive!</h1>
+    </div>
+    <div class="articles-section">
+        <div id="loading">Loading...</div>
+        <div id="error"></div>
+        <div class="grid" id="grid"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://api.rss2json.com/v1/api.json?rss_url=https://medium.com/feed/@hellorive';
+
+        function extractImage(html) {
+            const match = html.match(/<img[^>]+src="([^"]+)"/);
+            if (match) {
+                const src = match[1];
+                if (src.includes('1*') || (src.includes('tracking') && src.includes('1x1'))) return null;
+                return src;
+            }
+            return null;
+        }
+
+        function formatDate(dateStr) {
+            return new Date(dateStr).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        async function loadArticles() {
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const grid = document.getElementById('grid');
+
+            try {
+                const res = await fetch(API_URL);
+                if (!res.ok) throw new Error('Failed to fetch');
+                const data = await res.json();
+
+                loading.style.display = 'none';
+
+                data.items.forEach((item, i) => {
+                    const tile = document.createElement('a');
+                    tile.className = 'tile';
+                    tile.href = 'article.html?guid=' + encodeURIComponent(item.guid);
+                    tile.style.animationDelay = (i * 0.12) + 's';
+
+                    const thumb = extractImage(item.content || item.description || '');
+                    const categories = item.categories || [];
+
+                    tile.innerHTML =
+                        (thumb ? '<img class="tile-img" src="' + thumb + '" alt="">' : '') +
+                        '<div class="tile-body">' +
+                            '<div class="tile-title">' + item.title + '</div>' +
+                            '<div class="tile-date">' + formatDate(item.pubDate) + '</div>' +
+                            (categories.length ? '<div class="tile-tags">' +
+                                categories.map(function(c) { return '<span class="tag">' + c + '</span>'; }).join('') +
+                            '</div>' : '') +
+                        '</div>';
+
+                    grid.appendChild(tile);
+                });
+            } catch (e) {
+                loading.style.display = 'none';
+                error.style.display = 'block';
+                error.textContent = 'Could not load articles. Please try again later.';
+            }
+        }
+
+        loadArticles();
+    </script>
 </body>
 </html>
