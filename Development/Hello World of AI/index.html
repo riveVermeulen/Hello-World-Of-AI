@@ -5,6 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hello, Rive!</title>
     <style>
+        :root {
+            --bg: #0a0a0a;
+            --text: #fafafa;
+            --secondary: #d4d4d4;
+            --muted: #666;
+            --border: #1a1a1a;
+            --border-hover: #333;
+            --surface: #1a1a1a;
+        }
+
+        [data-theme="light"] {
+            --bg: #fafafa;
+            --text: #0a0a0a;
+            --secondary: #444;
+            --muted: #999;
+            --border: #e0e0e0;
+            --border-hover: #bbb;
+            --surface: #f0f0f0;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -13,8 +33,109 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-            background-color: #0a0a0a;
-            color: #fafafa;
+            background-color: var(--bg);
+            color: var(--text);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Loading overlay */
+        .loader-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: #0a0a0a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 1.6s cubic-bezier(0.25, 0.1, 0.25, 1), visibility 1.6s ease;
+        }
+
+        .loader-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .loader-light {
+            position: relative;
+            width: 200px;
+            height: 200px;
+        }
+
+        .loader-light::before,
+        .loader-light::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+        }
+
+        .loader-light::before {
+            width: 6px;
+            height: 6px;
+            top: 50%;
+            left: 50%;
+            margin: -3px 0 0 -3px;
+            background: #fff;
+            box-shadow:
+                0 0 8px 2px rgba(255, 255, 255, 0.9),
+                0 0 30px 10px rgba(255, 255, 255, 0.4),
+                0 0 80px 30px rgba(255, 255, 255, 0.15);
+            animation: lightPulse 2.5s ease-in-out infinite, lightDrift 5s ease-in-out infinite;
+        }
+
+        .loader-light::after {
+            width: 120px;
+            height: 120px;
+            top: 50%;
+            left: 50%;
+            margin: -60px 0 0 -60px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.06) 0%, transparent 70%);
+            animation: glowBreathe 2.5s ease-in-out infinite, lightDrift 5s ease-in-out infinite;
+        }
+
+        @keyframes lightPulse {
+            0%, 100% {
+                opacity: 0.4;
+                transform: scale(1);
+                box-shadow:
+                    0 0 8px 2px rgba(255, 255, 255, 0.6),
+                    0 0 20px 6px rgba(255, 255, 255, 0.2),
+                    0 0 50px 15px rgba(255, 255, 255, 0.05);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.2);
+                box-shadow:
+                    0 0 12px 4px rgba(255, 255, 255, 1),
+                    0 0 40px 15px rgba(255, 255, 255, 0.5),
+                    0 0 100px 40px rgba(255, 255, 255, 0.15);
+            }
+        }
+
+        @keyframes glowBreathe {
+            0%, 100% {
+                opacity: 0.3;
+                transform: scale(0.8);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.3);
+            }
+        }
+
+        @keyframes lightDrift {
+            0%, 100% {
+                translate: -3px 2px;
+            }
+            25% {
+                translate: 2px -2px;
+            }
+            50% {
+                translate: 3px 1px;
+            }
+            75% {
+                translate: -2px -2px;
+            }
         }
 
         @keyframes dissolveIn {
@@ -37,7 +158,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            min-height: calc(100vh - 80px);
         }
 
         h1 {
@@ -45,31 +166,36 @@
             font-weight: 700;
             letter-spacing: -0.02em;
             text-align: center;
-            animation: dissolveIn 1.8s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+            opacity: 0;
+            animation: dissolveIn 2s cubic-bezier(0.25, 0.1, 0.25, 1) 4.6s forwards;
+            text-shadow:
+                0 0 20px rgba(255, 255, 255, 0.15),
+                0 0 60px rgba(255, 255, 255, 0.05);
         }
 
-        .articles-section {
+        .feed-section {
             padding: 3rem 1.5rem;
+            opacity: 0;
+            animation: dissolveIn 1.2s cubic-bezier(0.25, 0.1, 0.25, 1) 6.2s forwards;
         }
 
         #loading {
             text-align: center;
-            color: #666;
+            color: var(--muted);
             font-size: 1rem;
             animation: pulse 1.5s ease-in-out infinite;
         }
 
         #error {
             text-align: center;
-            color: #d4d4d4;
+            color: var(--secondary);
             font-size: 1rem;
             display: none;
         }
 
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 1.5rem;
+        .masonry {
+            columns: 3 320px;
+            column-gap: 1.5rem;
             max-width: 1200px;
             margin: 0 auto;
         }
@@ -78,29 +204,38 @@
             display: block;
             text-decoration: none;
             color: inherit;
-            border: 1px solid #1a1a1a;
+            border: 1px solid var(--border);
             border-radius: 12px;
             overflow: hidden;
             opacity: 0;
             animation: dissolveIn 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
             transition: border-color 0.2s, transform 0.2s;
+            break-inside: avoid;
+            margin-bottom: 1.5rem;
         }
 
         .tile:hover {
-            border-color: #333;
+            border-color: var(--border-hover);
             transform: translateY(-4px);
         }
 
         .tile-img {
             width: 100%;
-            height: 200px;
-            object-fit: cover;
             display: block;
-            background-color: #1a1a1a;
+            background-color: var(--surface);
         }
 
         .tile-body {
             padding: 1.25rem;
+        }
+
+        .tile-source {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--muted);
+            margin-bottom: 0.5rem;
         }
 
         .tile-title {
@@ -112,7 +247,7 @@
 
         .tile-date {
             font-size: 0.85rem;
-            color: #666;
+            color: var(--muted);
             margin-bottom: 0.75rem;
         }
 
@@ -124,164 +259,91 @@
 
         .tag {
             font-size: 0.75rem;
-            color: #d4d4d4;
-            background: #1a1a1a;
+            color: var(--secondary);
+            background: var(--surface);
             padding: 0.2rem 0.6rem;
             border-radius: 999px;
         }
 
-        /* Dribbble section */
-        .dribbble-section {
-            padding: 3rem 1.5rem;
-            border-top: 1px solid #1a1a1a;
-        }
-
-        .section-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            max-width: 1200px;
-            margin: 0 auto 2rem;
-            opacity: 0;
-            animation: dissolveIn 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
-        }
-
-        .section-title .muted { color: #666; }
-        .section-title .bright { color: #fafafa; }
-
-        .carousel {
-            position: relative;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .carousel-track {
-            display: flex;
-            gap: 1.25rem;
-            overflow-x: auto;
-            scroll-snap-type: x mandatory;
-            scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-            padding: 0.5rem 1.25rem 0.5rem 0;
-        }
-
-        .carousel-track::-webkit-scrollbar {
-            display: none;
-        }
-
-        .shot-card {
-            flex: 0 0 320px;
-            scroll-snap-align: start;
-            border: 1px solid #1a1a1a;
-            border-radius: 12px;
-            overflow: hidden;
-            text-decoration: none;
-            color: inherit;
-            opacity: 0;
-            animation: dissolveIn 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
-            transition: border-color 0.2s, transform 0.2s;
-        }
-
-        .shot-card:last-child {
-            scroll-snap-align: end;
-        }
-
-        .shot-card:hover {
-            border-color: #333;
-            transform: translateY(-4px);
-        }
-
-        .shot-card img {
-            width: 100%;
-            height: 240px;
-            object-fit: cover;
-            display: block;
-            background-color: #1a1a1a;
-        }
-
-        .shot-card-body {
-            padding: 1rem 1.25rem;
-        }
-
-        .shot-card-title {
-            font-size: 0.95rem;
-            font-weight: 600;
-            line-height: 1.4;
-        }
-
-        .carousel-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
+        .theme-toggle {
+            position: fixed;
+            top: 1.25rem;
+            right: 1.25rem;
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            border: 1px solid #1a1a1a;
-            background: #0a0a0a;
-            color: #fafafa;
-            font-size: 1.25rem;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 1.1rem;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: border-color 0.2s, opacity 0.2s;
-            z-index: 2;
+            transition: border-color 0.2s, background-color 0.3s, color 0.3s;
+            z-index: 10;
         }
 
-        .carousel-btn:hover {
-            border-color: #333;
-        }
-
-        .carousel-btn.prev { left: -20px; }
-        .carousel-btn.next { right: -20px; }
-
-        .carousel-btn:disabled {
-            opacity: 0.2;
-            cursor: default;
-        }
-
-        #dribbble-loading {
-            text-align: center;
-            color: #666;
-            font-size: 1rem;
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-
-        #dribbble-error {
-            text-align: center;
-            color: #d4d4d4;
-            font-size: 1rem;
-            display: none;
+        .theme-toggle:hover {
+            border-color: var(--border-hover);
         }
     </style>
 </head>
 <body>
+    <div class="loader-overlay" id="loaderOverlay">
+        <div class="loader-light"></div>
+    </div>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme"></button>
     <div class="hero">
         <h1>Hello, Rive!</h1>
     </div>
-    <div class="articles-section">
+    <div class="feed-section">
         <div id="loading">Loading...</div>
         <div id="error"></div>
-        <div class="grid" id="grid"></div>
-    </div>
-    <div class="dribbble-section">
-        <div class="section-title"><span class="muted">Dribbble</span> <span class="bright">@Hello Rive</span></div>
-        <div id="dribbble-loading">Loading...</div>
-        <div id="dribbble-error"></div>
-        <div class="carousel" id="carousel" style="display:none">
-            <button class="carousel-btn prev" id="prevBtn" disabled>&lsaquo;</button>
-            <div class="carousel-track" id="carousel-track"></div>
-            <button class="carousel-btn next" id="nextBtn">&rsaquo;</button>
-        </div>
+        <div class="masonry" id="masonry"></div>
     </div>
 
     <script>
-        const API_URL = 'https://api.rss2json.com/v1/api.json?rss_url=https://medium.com/feed/@hellorive';
+        // Loading overlay — only on first visit / hard refresh
+        (function() {
+            var overlay = document.getElementById('loaderOverlay');
+            if (sessionStorage.getItem('loaded')) {
+                overlay.remove();
+                document.querySelector('h1').style.animation = 'dissolveIn 1s cubic-bezier(0.25,0.1,0.25,1) forwards';
+                document.querySelector('.feed-section').style.animation = 'dissolveIn 0.8s cubic-bezier(0.25,0.1,0.25,1) 0.4s forwards';
+            } else {
+                sessionStorage.setItem('loaded', '1');
+                setTimeout(function() {
+                    overlay.classList.add('hidden');
+                }, 5000);
+            }
+        })();
+
+        // Theme toggle
+        (function() {
+            var saved = localStorage.getItem('theme');
+            var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+            document.documentElement.setAttribute('data-theme', theme);
+            var btn = document.getElementById('themeToggle');
+            function updateIcon() {
+                btn.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '\u2600' : '\u263E';
+            }
+            updateIcon();
+            btn.addEventListener('click', function() {
+                var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', next);
+                localStorage.setItem('theme', next);
+                updateIcon();
+            });
+        })();
+
+        const MEDIUM_URL = 'https://api.rss2json.com/v1/api.json?rss_url=https://medium.com/feed/@hellorive';
+        const DRIBBBLE_URL = 'https://api.codetabs.com/v1/proxy?quest=https://dribbble.com/hellorive';
 
         function extractImage(html) {
-            const match = html.match(/<img[^>]+src="([^"]+)"/);
+            var match = html.match(/<img[^>]+src="([^"]+)"/);
             if (match) {
-                const src = match[1];
+                var src = match[1];
                 if (src.includes('1*') || (src.includes('tracking') && src.includes('1x1'))) return null;
                 return src;
             }
@@ -296,126 +358,116 @@
             });
         }
 
-        async function loadArticles() {
-            const loading = document.getElementById('loading');
-            const error = document.getElementById('error');
-            const grid = document.getElementById('grid');
-
-            try {
-                const res = await fetch(API_URL);
-                if (!res.ok) throw new Error('Failed to fetch');
-                const data = await res.json();
-
-                loading.style.display = 'none';
-
-                data.items.forEach((item, i) => {
-                    const tile = document.createElement('a');
-                    tile.className = 'tile';
-                    tile.href = 'article.html?guid=' + encodeURIComponent(item.guid);
-                    tile.style.animationDelay = (i * 0.12) + 's';
-
-                    const thumb = extractImage(item.content || item.description || '');
-                    const categories = item.categories || [];
-
-                    tile.innerHTML =
-                        (thumb ? '<img class="tile-img" src="' + thumb + '" alt="">' : '') +
-                        '<div class="tile-body">' +
-                            '<div class="tile-title">' + item.title + '</div>' +
-                            '<div class="tile-date">' + formatDate(item.pubDate) + '</div>' +
-                            (categories.length ? '<div class="tile-tags">' +
-                                categories.map(function(c) { return '<span class="tag">' + c + '</span>'; }).join('') +
-                            '</div>' : '') +
-                        '</div>';
-
-                    grid.appendChild(tile);
-                });
-            } catch (e) {
-                loading.style.display = 'none';
-                error.style.display = 'block';
-                error.textContent = 'Could not load articles. Please try again later.';
-            }
+        async function fetchMedium() {
+            var res = await fetch(MEDIUM_URL);
+            if (!res.ok) return [];
+            var data = await res.json();
+            return data.items.map(function(item) {
+                return {
+                    type: 'medium',
+                    title: item.title,
+                    thumb: extractImage(item.content || item.description || ''),
+                    date: item.pubDate,
+                    categories: item.categories || [],
+                    href: 'article.html?guid=' + encodeURIComponent(item.guid)
+                };
+            });
         }
 
-        loadArticles();
+        async function fetchDribbble() {
+            var res = await fetch(DRIBBBLE_URL);
+            if (!res.ok) return [];
+            var html = await res.text();
+            var parser = new DOMParser();
+            var doc = parser.parseFromString(html, 'text/html');
+            var shots = doc.querySelectorAll('li.shot-thumbnail');
+            var items = [];
+            shots.forEach(function(shot) {
+                var titleEl = shot.querySelector('.shot-title');
+                var imgEl = shot.querySelector('img');
+                var linkEl = shot.querySelector('a.shot-thumbnail-link');
+                if (!titleEl || !imgEl) return;
+                var imgSrc = imgEl.getAttribute('data-src') || imgEl.getAttribute('src');
+                var href = linkEl ? linkEl.getAttribute('href') : '#';
+                if (href.startsWith('/')) href = 'https://dribbble.com' + href;
+                items.push({
+                    type: 'dribbble',
+                    title: titleEl.textContent.trim(),
+                    thumb: imgSrc,
+                    href: 'shot.html?url=' + encodeURIComponent(href)
+                });
+            });
+            return items;
+        }
 
-        // Dribbble carousel
-        const DRIBBBLE_URL = 'https://api.codetabs.com/v1/proxy?quest=https://dribbble.com/hellorive';
+        function interleave(a, b) {
+            var result = [];
+            var maxLen = Math.max(a.length, b.length);
+            for (var i = 0; i < maxLen; i++) {
+                if (i < a.length) result.push(a[i]);
+                if (i < b.length) result.push(b[i]);
+            }
+            return result;
+        }
 
-        async function loadDribbbleShots() {
-            const loading = document.getElementById('dribbble-loading');
-            const error = document.getElementById('dribbble-error');
-            const carousel = document.getElementById('carousel');
-            const track = document.getElementById('carousel-track');
+        async function loadFeed() {
+            var loading = document.getElementById('loading');
+            var error = document.getElementById('error');
+            var masonry = document.getElementById('masonry');
 
             try {
-                const res = await fetch(DRIBBBLE_URL);
-                if (!res.ok) throw new Error('Failed to fetch');
-                const html = await res.text();
+                var results = await Promise.all([
+                    fetchMedium().catch(function() { return []; }),
+                    fetchDribbble().catch(function() { return []; })
+                ]);
 
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const shots = doc.querySelectorAll('li.shot-thumbnail');
-
-                if (!shots.length) throw new Error('No shots found');
+                var medium = results[0];
+                var dribbble = results[1];
+                var items = interleave(medium, dribbble);
 
                 loading.style.display = 'none';
-                carousel.style.display = 'block';
 
-                shots.forEach(function(shot, i) {
-                    const titleEl = shot.querySelector('.shot-title');
-                    const imgEl = shot.querySelector('img');
-                    const linkEl = shot.querySelector('a.shot-thumbnail-link');
-
-                    if (!titleEl || !imgEl) return;
-
-                    var imgSrc = imgEl.getAttribute('data-src') || imgEl.getAttribute('src');
-
-                    var href = linkEl ? linkEl.getAttribute('href') : '#';
-                    if (href.startsWith('/')) href = 'https://dribbble.com' + href;
-
-                    var card = document.createElement('a');
-                    card.className = 'shot-card';
-                    card.href = href;
-                    card.target = '_blank';
-                    card.rel = 'noopener';
-                    card.style.animationDelay = (i * 0.12) + 's';
-
-                    card.innerHTML =
-                        '<img src="' + imgSrc + '" alt="' + titleEl.textContent.trim() + '">' +
-                        '<div class="shot-card-body">' +
-                            '<div class="shot-card-title">' + titleEl.textContent.trim() + '</div>' +
-                        '</div>';
-
-                    track.appendChild(card);
-                });
-
-                // Carousel navigation
-                var prevBtn = document.getElementById('prevBtn');
-                var nextBtn = document.getElementById('nextBtn');
-                var scrollAmount = 340;
-
-                function updateButtons() {
-                    prevBtn.disabled = track.scrollLeft <= 0;
-                    nextBtn.disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 1;
+                if (!items.length) {
+                    error.style.display = 'block';
+                    error.textContent = 'No content to display.';
+                    return;
                 }
 
-                prevBtn.addEventListener('click', function() {
-                    track.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-                });
-                nextBtn.addEventListener('click', function() {
-                    track.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-                });
-                track.addEventListener('scroll', updateButtons);
-                updateButtons();
+                items.forEach(function(item, i) {
+                    var tile = document.createElement('a');
+                    tile.className = 'tile';
+                    tile.href = item.href;
+                    tile.style.animationDelay = (i * 0.1) + 's';
 
+
+                    var html = '';
+                    if (item.thumb) {
+                        html += '<img class="tile-img" src="' + item.thumb + '" alt="">';
+                    }
+                    html += '<div class="tile-body">';
+                    html += '<div class="tile-source">' + item.type + '</div>';
+                    html += '<div class="tile-title">' + item.title + '</div>';
+                    if (item.date) {
+                        html += '<div class="tile-date">' + formatDate(item.date) + '</div>';
+                    }
+                    if (item.categories && item.categories.length) {
+                        html += '<div class="tile-tags">' +
+                            item.categories.map(function(c) { return '<span class="tag">' + c + '</span>'; }).join('') +
+                        '</div>';
+                    }
+                    html += '</div>';
+
+                    tile.innerHTML = html;
+                    masonry.appendChild(tile);
+                });
             } catch (e) {
                 loading.style.display = 'none';
                 error.style.display = 'block';
-                error.textContent = 'Could not load Dribbble shots.';
+                error.textContent = 'Could not load content. Please try again later.';
             }
         }
 
-        loadDribbbleShots();
+        loadFeed();
     </script>
 </body>
 </html>
